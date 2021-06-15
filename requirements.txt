@@ -1,0 +1,12 @@
+hdbscan
+jupyter
+numpy
+pandas
+python-igraph
+scikit-image
+scikit-learn
+scipy
+seaborn
+statsmodels
+tifffile
+umap-learn
