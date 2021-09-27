@@ -6,8 +6,9 @@ The python package of STARMap bioinformatics analysis pipeline.
 
 ## Installation
 ```python
-# via Pypi
-pip install starmap
+# via Pypi (local development)
+# cd to the repo folder 
+pip install -e .
 ```
 
 ## Usage
