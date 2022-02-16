@@ -253,10 +253,16 @@ def plot_poly_cells_cluster_by_sample(adata, sample, cmap, linewidth=0.1,
         # plt.figure(figsize=(figscale*width/float(height), figscale))
         plt.figure(figsize=(nissl.shape[0]/1000 * figscale, nissl.shape[1]/1000 * figscale), dpi=100)
 
-    polys = [hull_to_polygon(h) for h in hulls]
+    polys = []
+    for h in hulls:
+        if h == []:
+            polys.append([])
+        else:
+            polys.append(hull_to_polygon(h))
+    # polys = [hull_to_polygon(h) for h in hulls]
 
     if good_cells is not None:
-        others = [p for i, p in enumerate(polys) if i not in good_cells]
+        others = [p for i, p in enumerate(polys) if i not in good_cells and p != []]
         polys = [p for i, p in enumerate(polys) if i in good_cells]
 
     p = PatchCollection(polys, alpha=alpha, cmap=cmap, edgecolor='k', linewidth=linewidth, zorder=3)
