@@ -14,7 +14,7 @@ from sklearn.neighbors import NearestNeighbors
 from sklearn.decomposition import PCA, FactorAnalysis, NMF
 
 # Clustering
-import hdbscan
+# import hdbscan
 import igraph as ig
 from sklearn.mixture import GaussianMixture
 from sklearn.cluster import SpectralClustering, DBSCAN

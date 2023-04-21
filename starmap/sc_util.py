@@ -21,6 +21,7 @@ from scipy.stats import ttest_ind, norm, ranksums, spearmanr
 from scipy.spatial import ConvexHull
 from skimage.measure import regionprops
 from scipy.stats.mstats import zscore
+from tqdm.notebook import tqdm
 
 
 
@@ -76,9 +77,12 @@ def plot_stats_per_cell(adata, color='sample', save=False):
     plt.tight_layout()
 
     if save:
-        # current_fig_path = os.path.join(os.getcwd(), "output/figures/cell_stats.pdf")
-        current_fig_path = "./figures/cell_stats.pdf"
-        plt.savefig(current_fig_path)
+        if type(save) == str:
+            plt.savefig(save)
+        else:
+            # current_fig_path = os.path.join(os.getcwd(), "output/figures/cell_stats.pdf")
+            current_fig_path = "./figures/cell_stats.pdf"
+            plt.savefig(current_fig_path)
     plt.show()
 
 
@@ -207,7 +211,7 @@ def get_qhulls(labels):
     coords = []
     centroids = []
     print('Geting ConvexHull...')
-    for i, region in enumerate(regionprops(labels)):
+    for i, region in enumerate(tqdm(regionprops(labels))):
         current_convex = ConvexHull(region.coords)
         hulls.append(ConvexHull(region.coords))
         coords.append(region.coords)
@@ -222,7 +226,7 @@ def get_qhulls_test(labels):
     coords = []
     centroids = []
     print('Geting ConvexHull...')
-    for i, region in enumerate(regionprops(labels)):
+    for i, region in enumerate(tqdm(regionprops(labels))):
         try:
           current_convex = ConvexHull(region.coords)
           hulls.append(ConvexHull(region.coords))
@@ -237,7 +241,7 @@ def get_qhulls_test(labels):
 
 # Plot 2D polygon figure indicating cell typing and clustering
 def plot_poly_cells_cluster_by_sample(adata, sample, cmap, linewidth=0.1,
-                            show_plaque=None, show_tau=None, show_tau_cells=None, show_gfap=False,
+                            show_plaque=None, show_tau=None, show_tau_cells=None, show_gfap=False, bg_color='#ededed', 
                             width=2, height=9, figscale=10, save=False, show=True, save_as_real_size=False,
                             output_dir='./figures', rescale_colors=False, alpha=1, vmin=None, vmax=None):
     sample_key = f"{sample}_morph"
@@ -267,7 +271,7 @@ def plot_poly_cells_cluster_by_sample(adata, sample, cmap, linewidth=0.1,
 
     p = PatchCollection(polys, alpha=alpha, cmap=cmap, edgecolor='k', linewidth=linewidth, zorder=3)
 
-    other_cmap = sns.color_palette(['#b3b3b3']) # d1d1d1 ededed d9d9d9 b3b3b3
+    other_cmap = sns.color_palette([bg_color]) # d1d1d1 ededed d9d9d9 b3b3b3
     other_cmap = ListedColormap(other_cmap)
     o = PatchCollection(others, alpha=1, cmap=other_cmap, linewidth=0, zorder=1)
 
@@ -388,14 +392,16 @@ def plot_poly_cells_cluster_by_sample(adata, sample, cmap, linewidth=0.1,
         if isinstance(save, str):
             if save_as_real_size:
                 current_fig_path = f"{output_dir}/sct_{sample}_{save}.tif"
-                plt.savefig(current_fig_path, dpi=1000, pil_kwargs={"compression": "tiff_lzw"})
+                # plt.savefig(current_fig_path, dpi=1000, pil_kwargs={"compression": "tiff_lzw"})
+                plt.savefig(current_fig_path, dpi=1000)
             else:
                 current_fig_path = f"{output_dir}/sct_{sample}_{save}.pdf"
                 plt.savefig(current_fig_path, bbox_inches='tight', pad_inches=0)
         else:
             if save_as_real_size:
                 current_fig_path = f"{output_dir}/sct_{sample}.tif"
-                plt.savefig(current_fig_path, dpi=1000, pil_kwargs={"compression": "tiff_lzw"})
+                # plt.savefig(current_fig_path, dpi=1000, pil_kwargs={"compression": "tiff_lzw"})
+                plt.savefig(current_fig_path, dpi=1000)
             else:
                 current_fig_path = f"{output_dir}/sct_{sample}.pdf"
                 plt.savefig(current_fig_path, bbox_inches='tight', pad_inches=0)
@@ -826,6 +832,118 @@ def plot_poly_cells_meta_by_sample(adata, sample, meta, cmap, linewidth=0.5, use
             if save_as_real_size:
                 current_fig_path = f"{output_dir}/sct_{sample}.tif"
                 plt.savefig(current_fig_path, dpi=1000, pil_kwargs={"compression": "tiff_lzw"})
+            else:
+                current_fig_path = f"{output_dir}/sct_{sample}.pdf"
+                plt.savefig(current_fig_path, bbox_inches='tight', pad_inches=0)
+
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
+
+
+####### Test
+
+def plot_poly_cells_cluster_by_sample_test(adata, sample, cmap, linewidth=0.1,
+                            show_plaque=None, show_tau=None, show_tau_cells=None, show_gfap=False, bg_color='#ededed', 
+                            width=2, height=9, figscale=10, save=False, show=True, save_as_real_size=False,
+                            output_dir='./figures', rescale_colors=False, alpha=1, vmin=None, vmax=None):
+    sample_key = f"{sample}_morph"
+    nissl = adata.uns[sample_key]['label_img']
+    hulls = adata.uns[sample_key]['qhulls']
+    colors = adata.uns[sample_key]['colors']
+    good_cells = adata.uns[sample_key]['good_cells']
+
+    if save_as_real_size:
+        # print(nissl.shape[1]/1000, nissl.shape[0]/1000)
+        plt.figure(figsize=(nissl.shape[0]/1000, nissl.shape[1]/1000), dpi=100)
+    else:
+        # plt.figure(figsize=(figscale*width/float(height), figscale))
+        plt.figure(figsize=(nissl.shape[0]/1000 * figscale, nissl.shape[1]/1000 * figscale), dpi=100)
+
+    polys = []
+    for h in hulls:
+        if h == []:
+            polys.append([])
+        else:
+            polys.append(hull_to_polygon(h))
+    # polys = [hull_to_polygon(h) for h in hulls]
+
+    if good_cells is not None:
+        others = [p for i, p in enumerate(polys) if i not in good_cells and p != []]
+        polys = [p for i, p in enumerate(polys) if i in good_cells]
+
+    p = PatchCollection(polys, alpha=alpha, cmap=cmap, edgecolor='k', linewidth=linewidth, zorder=3)
+
+    other_cmap = sns.color_palette([bg_color]) # d1d1d1 ededed d9d9d9 b3b3b3
+    other_cmap = ListedColormap(other_cmap)
+    o = PatchCollection(others, alpha=1, cmap=other_cmap, linewidth=0, zorder=1)
+
+    if vmin or vmax is not None:
+        p.set_array(colors)
+        p.set_clim(vmin=vmin, vmax=vmax)
+    else:
+        if rescale_colors:
+            p.set_array(colors+1)
+            p.set_clim(vmin=0, vmax=max(colors+1))
+        else:
+            p.set_array(colors)
+            p.set_clim(vmin=0, vmax=len(cmap.colors))
+
+            o_colors = np.ones(len(others)).astype(int)
+            o.set_array(o_colors)
+            o.set_clim(vmin=0, vmax=max(o_colors))
+
+    # show background image (nissl | DAPI | device)
+    if show_plaque:
+        plaque = adata.uns[sample_key]['plaque']
+        # plt.imshow(plaque.T, cmap=plt.cm.get_cmap('binary'), zorder=0)
+
+        masked_plaque = np.ma.masked_where(plaque == 0, plaque)
+
+        plaque_cmap = sns.color_palette(['#000000', '#ffffff'])
+        plaque_cmap = ListedColormap(plaque_cmap)
+        plt.imshow(masked_plaque.T, plaque_cmap, interpolation='none', alpha=1, zorder=0)
+
+
+    nissl = (nissl > 0).astype(np.int)
+    plt.imshow(nissl.T, cmap=plt.get_cmap('gray_r'), alpha=0, zorder=1)
+
+    plt.gca().add_collection(p)
+    plt.gca().add_collection(o)
+
+    if show_gfap:
+        gfap = adata.uns[sample_key]['Gfap']
+        gfap_cmap = sns.color_palette(['#00a31b', '#ffffff']) # 00a6b5 00db00
+        gfap_cmap = ListedColormap(gfap_cmap)
+        masked = np.ma.masked_where(gfap == 0, gfap)
+        plt.imshow(masked.T, gfap_cmap, interpolation='none', alpha=1, zorder=5)
+
+    if show_tau:
+        tau = adata.uns[sample_key]['tau']
+        tau_cmap = sns.color_palette(['#ff0088', '#ffffff']) # 00a6b5 ff0088
+        tau_cmap = ListedColormap(tau_cmap)
+        masked = np.ma.masked_where(tau == 0, tau)
+        plt.imshow(masked.T, tau_cmap, interpolation='none', alpha=1, zorder=4)
+
+    plt.axis('off')
+    plt.tight_layout(pad=0)
+
+    if save:
+        if isinstance(save, str):
+            if save_as_real_size:
+                current_fig_path = f"{output_dir}/sct_{sample}_{save}.tif"
+                # plt.savefig(current_fig_path, dpi=1000, pil_kwargs={"compression": "tiff_lzw"})
+                plt.savefig(current_fig_path, dpi=1000)
+            else:
+                current_fig_path = f"{output_dir}/sct_{sample}_{save}.pdf"
+                plt.savefig(current_fig_path, bbox_inches='tight', pad_inches=0)
+        else:
+            if save_as_real_size:
+                current_fig_path = f"{output_dir}/sct_{sample}.tif"
+                # plt.savefig(current_fig_path, dpi=1000, pil_kwargs={"compression": "tiff_lzw"})
+                plt.savefig(current_fig_path, dpi=1000)
             else:
                 current_fig_path = f"{output_dir}/sct_{sample}.pdf"
                 plt.savefig(current_fig_path, bbox_inches='tight', pad_inches=0)
