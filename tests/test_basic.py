@@ -1,10 +1,10 @@
 import pytest
 
-import starmap-py
+import starmap
 
 
 def test_package_has_version():
-    assert starmap-py.__version__ is not None
+    assert starmap.__version__ is not None
 
 
 @pytest.mark.skip(reason="This decorator should be removed when test passes.")
