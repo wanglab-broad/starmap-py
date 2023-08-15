@@ -1,6 +1,14 @@
-# Regular
+"""
+This file contains deprecated functions, some of them might not be working any more due to the changes of the overall package architecture. 
+
+"""
+
+# Import related packages 
+import os
 import numpy as np
 import pandas as pd
+import textwrap as tw
+from anndata import AnnData
 from matplotlib import pyplot as plt
 
 # Dimensionality reduction
@@ -10,7 +18,7 @@ from sklearn.neighbors import NearestNeighbors
 from sklearn.decomposition import PCA, FactorAnalysis, NMF
 
 # Clustering
-# import hdbscan
+import hdbscan
 import igraph as ig
 from sklearn.mixture import GaussianMixture
 from sklearn.cluster import SpectralClustering, DBSCAN
@@ -20,19 +28,8 @@ from sklearn.preprocessing import scale, MinMaxScaler
 from scipy.stats import ttest_ind, ranksums
 from statsmodels.stats.multitest import multipletests
 
-# From other parts of the package
-from . import utilities as ut
 
-# Import packages
-import os
-import numpy as np
-import pandas as pd
-import textwrap as tw
-from anndata import AnnData
-# from .viz import *
-# from .analyze import *
-
-
+# The old STARMapDataset object class for downstream analysis used in Wang et al. 2018 Science 
 class STARMapDataset(object):
     """This is the fundamental class"""
 
@@ -407,9 +404,6 @@ def load_new_data(data_dir):
     return expr.T
 
 
-# Load gene expression table (clean)
-def load_data_test(data_dir):
-    print('temp')
 # ==== PRE-PROCESSING ====
 # Filter the cell and gene by its expression profile
 def filter_cells_by_expression(self, min_genes=10, min_cells=10):
@@ -591,7 +585,7 @@ def run_umap(self, max_pc=5, n_neighbors=10, min_dist=0.3, metric="euclidean"):
     self._tsne = umap.UMAP(n_neighbors=n_neighbors, min_dist=min_dist, metric=metric).fit_transform(self._transformed_pca[:, :max_pc])
 
 
-# CLUSTERING
+# ==== CLUSTERING ====
 # Hierarchical Density-Based Spatial Clustering of Applications with Noise
 def cluster_hdbscan(self, max_pc=5):
     """
@@ -633,7 +627,7 @@ def cluster_gmm(self, n_clusts=5, max_pc=5):
     self._clusts = np.array(model.predict(self._transformed_pca[:, :max_pc]))
 
 
-# DIFFERENTIAL EXPRESSION
+# ==== DIFFERENTIAL EXPRESSION ====
 # Find all marker genes
 def find_all_markers(self, test="bimod", use_genes=None, only_pos=True,
                      log_fc_thresh=0.25, min_pct=0.1, fdr_correct=True):

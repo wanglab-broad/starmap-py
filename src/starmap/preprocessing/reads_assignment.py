@@ -2,25 +2,46 @@
 This file contains fuctions for reads assignment.
 """
 
-# Load Packages
-from .coding import *
+# Test package loading
+def test(test_parameter):
+    """This is a test for module loading.
 
+    Parameters
+    ----------
+    test_parameter
+        dummy parameter
+
+    Returns
+    -------
+        dummy parameter
+    """
+    print('reads-assignment module is loaded!')
+    return test_parameter
+
+
+# Import packages
 import os
+import numpy as np
 import tifffile
 import matplotlib.pyplot as plt
 import xml.etree.ElementTree as ET
+
+from scipy import ndimage as ndi
 from scipy.io import loadmat
 from scipy.spatial import ConvexHull, cKDTree
+
 from skimage.filters import laplace, gaussian
-from scipy import ndimage as ndi
-from skimage.morphology import binary_dilation, disk  # watershed
+from skimage.morphology import binary_dilation, disk
 from skimage.segmentation import watershed
 from skimage.transform import resize
-from matplotlib.path import Path
 from skimage.measure import regionprops
+
+from matplotlib.path import Path
 import matplotlib.patches as mpatches
 
+from ..tools import encode_SOLID
 
+# ==== Cell segmentation ====
 # Get locations of nuclei from manual markers in DAPI channel
 def parse_CellCounter(path):
     """
@@ -50,57 +71,15 @@ def load_ilastik_image(fpath):
 
 
 # Load maximum projection of Nissl channel image
-def load_nissl_image(dirname, fname="nissl_maxproj_resized.tif"):
-    """
-    Load Nissl data from directory containing nissl subdirectory.
-    :param dirname: path/to/folder
-    :param fname: image file name
-    :return: numpy.ndarray
-    """
-    nissl = tifffile.imread(os.path.join(dirname, fname))
-    return nissl
-
-
-# Load label image
-def load_label_image(dirname, fname="label_img.tif"):
-    labels = tifffile.imread(os.path.join(dirname, fname))
-    return labels
-
-
-# Load segmentation image
-def load_seg_image(dirname, fname="seg_img.tif"):
-    seg = tifffile.imread(os.path.join(dirname, fname))
-    seg = np.max(seg, axis=0)
-    return seg
+def load_img(fpath):
+    img = tifffile.imread(os.path.join(fpath))
+    return img
 
 
 # Load cell locations from mat file
-def load_cell_points(fpath):
+def load_cell_locs(fpath):
     S = loadmat(os.path.join(fpath, "output", "cellLocs.mat"))
     return np.round(S["cellLocs"])
-
-
-# Load reads and their positions from mat file
-def load_read_position(fpath, reads_file):
-    S = loadmat(os.path.join(fpath, reads_file))
-    bases = [str(i[0][0]) for i in S["goodReads"]]
-    points = S["goodPoints"][:, :2]
-    temp = np.zeros(points.shape)
-    temp[:, 0] = np.round(points[:, 1]-1)
-    temp[:, 1] = np.round(points[:, 0]-1)
-    return bases, temp
-
-
-# Load gene table from genes.csv
-def load_genes(fpath):
-    genes2seq = {}
-    seq2genes = {}
-    with open(os.path.join(fpath, "genes.csv"), encoding='utf-8-sig') as f:
-        for l in f:
-            fields = l.rstrip().split(",")
-            genes2seq[fields[0]] = "".join([str(s+1) for s in encode_SOLID(fields[1][::-1])])
-            seq2genes[genes2seq[fields[0]]] = fields[0]
-    return genes2seq, seq2genes
 
 
 # Perform segmentation on nissl image
@@ -130,11 +109,36 @@ def segment_nissl_image(fpath, nissl, cell_locs, dilation=True):
     return labels
 
 
+# ==== Decoding reads ====
+# Load reads and their positions from mat file
+def load_read_position(fpath, reads_file):
+    S = loadmat(os.path.join(fpath, reads_file))
+    bases = [str(i[0][0]) for i in S["goodReads"]]
+    points = S["goodPoints"][:, :2]
+    temp = np.zeros(points.shape)
+    temp[:, 0] = np.round(points[:, 1]-1)
+    temp[:, 1] = np.round(points[:, 0]-1)
+    return bases, temp
+
+
+# Load gene table from genes.csv
+def load_genes(fpath):
+    genes2seq = {}
+    seq2genes = {}
+    with open(os.path.join(fpath, "genes.csv"), encoding='utf-8-sig') as f:
+        for l in f:
+            fields = l.rstrip().split(",")
+            genes2seq[fields[0]] = "".join([str(s+1) for s in encode_SOLID(fields[1][::-1])])
+            seq2genes[genes2seq[fields[0]]] = fields[0]
+    return genes2seq, seq2genes
+
+
+# ==== Reads assignment ====
 # Assign reads to cells
 def assign_reads_to_cells(labels, good_spots):
     Nlabels = labels.max()
     # make matrix of XY coordinates of label pixels and corresponding labels
-    Npixels = len(np.where(labels > 0)[0])
+    # Npixels = len(np.where(labels > 0)[0])
     coords = []
     cell_ids = []
     print("Grabbing coordinates of cells xxx")
@@ -332,6 +336,7 @@ def convert_reads_assignment_3d(fpath, run_id, reads_label, Nlabels, bases, seqs
     # return cell_by_barcode
 
 
+# ==== Related visualization ====
 # Make and save expression image
 def save_expression_images(fpath, d, labels, hulls):
     outdir = os.path.join(fpath, "output", "singlecell")

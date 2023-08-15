@@ -1,10 +1,15 @@
 """
-This file contains coding information for reads assignment.
+This file contains utiliy functions.
 """
 
-# Import Packages
+# Test package loading
+def test():
+    print('tools module is loaded!')
+
+# Import packages
 import numpy as np
 import itertools
+from scipy.stats import chi2, norm
 
 # Base info
 colors = [0, 1, 2, 3]  # red, orange, green, blue
@@ -28,7 +33,7 @@ start_pos = [1, 0, 4, 3, 2]
 
 alexa_map = {0: 'G', 1: 'T', 2: 'A', 3: 'C'}
 
-
+# ==== Sequence barcoding related functions ====
 # Return the Hamming distance between equal-length sequences
 def hamming_distance(s1, s2):
     if len(s1) != len(s2):
@@ -109,7 +114,7 @@ def simulate_encode_SOLID(seq):
 
 
 # Test SOLID encoding
-def test_solid():
+def test_SOLID():
     x = 'ATCCGGATCCGTACTCGTAATGCTAT'
     (y, _) = simulate_encode_SOLID(x)
     # print(y)
@@ -214,6 +219,7 @@ def find_codebook_in_colorspace(ncodes, nlen, min_dist=0):
                 break
     return good_codes
 
+
 # Generate good sequence for SOLID with a Hamming distance & GC content constraint
 def find_codebook(ncodes, nlen, min_dist=0):
     all_codes = np.random.permutation(generate_all_codes(nlen))
@@ -241,20 +247,8 @@ def find_codebook(ncodes, nlen, min_dist=0):
 def codebook_to_SOLID(codebook):
     return [encode_SOLID(c) for c in codebook]
 
-"""
-This file contains all basic utility functions.
-"""
 
-# Import packages
-import numpy as np
-from scipy.stats import chi2, norm
-
-
-# Test package loading
-def test():
-    print('hello world xxx')
-
-
+# ==== Others ====
 # Get the index of a subset
 def get_subset_index(p, i):
     return np.argwhere(p.values == i).flatten()
@@ -295,7 +289,8 @@ def bimod_likelihood(x, xmin=0):
     return lik_a + lik_b
 
 
-# Convert rc based coordinates to xy
+# ==== Spatial coordinates ====
+# Convert row-column based (rc) based coordinates to xy
 def rc2xy_2d(rc):
     x = rc[:, 1]
     r_max = max(rc[:, 0])
@@ -304,7 +299,7 @@ def rc2xy_2d(rc):
     return xy
 
 
-# Convert rcz based coordinates to xyz
+# Convert row-column based (rcz) based coordinates to xyz
 def rc2xy_3d(rcz):
     temp = rcz.copy()
     x = temp[:, 1]
@@ -315,8 +310,9 @@ def rc2xy_3d(rcz):
     return xyz
 
 
+# ==== AnnData manipulation ====
 # Merge multiple clusters in AnnData object
-def merge_multiple_clusters_ann(adata, clusts):
+def merge_leiden_adata(adata, clusts, inplace=False, new_field='merged_leiden'):
     org_clusts = adata.obs['leiden'].astype(int).to_numpy()
     for idx, c in enumerate(clusts[1:]):
         org_clusts[org_clusts == c] = clusts[0]
@@ -324,12 +320,17 @@ def merge_multiple_clusters_ann(adata, clusts):
     # relabel clusters to be contiguous
     for idx, c in enumerate(np.unique(org_clusts)):
         temp[org_clusts == c] = idx
-    adata.obs['leiden'] = temp.astype(str)
-    adata.obs['leiden'] = adata.obs['leiden'].astype('category')
+
+    if inplace:
+        adata.obs['leiden'] = temp.astype(str)
+        adata.obs['leiden'] = adata.obs['leiden'].astype('category')
+    else:
+        adata.obs[new_field] = temp.astype(str)
+        adata.obs[new_field] = adata.obs[new_field].astype('category')
 
 
 # Sort clusters with input order
-def order_clusters_ann(adata, orders):
+def reorder_leiden_adata(adata, orders, inplace=False, new_field='ordered_leiden'):
     clusts = adata.obs['leiden'].astype(int).to_numpy()
     temp = clusts.copy()
     n_clusters = len(np.unique(clusts))
@@ -339,6 +340,11 @@ def order_clusters_ann(adata, orders):
     for idx, c in enumerate(np.unique(temp)):
         temp[temp == c] = orders[idx]
         print(f"{idx} --> {orders[idx]}")
-    adata.obs['leiden'] = temp.astype(str)
-    adata.obs['leiden'] = adata.obs['leiden'].astype('category')
+
+    if inplace:
+        adata.obs['leiden'] = temp.astype(str)
+        adata.obs['leiden'] = adata.obs['leiden'].astype('category')
+    else:
+        adata.obs[new_field] = temp.astype(str)
+        adata.obs[new_field] = adata.obs[new_field].astype('category')
 

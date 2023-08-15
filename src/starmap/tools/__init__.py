@@ -1,1 +1,1 @@
-from starmap.tools.basic import test
+from starmap.tools.basic import * 

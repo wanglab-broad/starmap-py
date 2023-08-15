@@ -1,1 +1,1 @@
-from .basic import basic_preproc
+from starmap.preprocessing.reads_assignment import *

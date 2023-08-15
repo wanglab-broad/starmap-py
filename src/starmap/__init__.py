@@ -1,8 +1,10 @@
 from importlib.metadata import version
 
 from starmap import tools as tl
-# from starmap import preprocessing as pp
-# from starmap import plotting as pl
+from starmap import preprocessing as pp
+from starmap import plotting as pl
+
+# Only for deprecated functions, can only be used for test
 # from starmap import archive as ar
 
 import sys

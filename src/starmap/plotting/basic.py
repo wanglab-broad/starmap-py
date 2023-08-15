@@ -1025,7 +1025,7 @@ This file contains fuctions for visualization.
 """
 
 # Import packages
-from . import utilities as ut
+# from . import utilities as ut
 
 import numpy as np
 import pandas as pd
