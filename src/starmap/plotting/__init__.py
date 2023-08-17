@@ -1,1 +1,2 @@
-from .basic import BasicClass, basic_plot
+from starmap.plotting.basic import *
+from starmap.plotting.spatial import *
